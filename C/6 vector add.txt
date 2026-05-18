@@ -1,0 +1,56 @@
+
+!pip install nvcc4jupyter
+
+
+
+from numba import cuda
+import numpy as np
+import math
+import time
+
+# CUDA Kernel
+@cuda.jit
+def vector_add(a, b, c):
+    idx = cuda.grid(1)
+
+    if idx < a.size:
+        c[idx] = a[idx] + b[idx]
+
+# Main Program
+N = 1000000   # Size of vectors
+
+# Create large vectors
+a = np.random.rand(N).astype(np.float32)
+b = np.random.rand(N).astype(np.float32)
+
+# Output vector
+c = np.zeros(N, dtype=np.float32)
+
+# Threads per block
+threads_per_block = 256
+
+# Number of blocks
+blocks_per_grid = math.ceil(N / threads_per_block)
+
+# Start time
+start = time.time()
+
+# Launch CUDA kernel
+vector_add[blocks_per_grid, threads_per_block](a, b, c)
+
+# Wait for GPU to finish
+cuda.synchronize()
+
+# End time
+end = time.time()
+
+# Display sample output
+print("First 10 Elements:")
+
+for i in range(10):
+    print(f"{a[i]} + {b[i]} = {c[i]}")
+
+print("\nExecution Time:", end - start, "seconds")
+
+
+

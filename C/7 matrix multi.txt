@@ -1,0 +1,71 @@
+
+!pip install nvcc4jupyter
+
+
+
+
+import numpy as np
+from numba import cuda
+import math
+
+# CUDA Kernel
+@cuda.jit
+def matrix_multiply(A, B, C):
+
+    row, col = cuda.grid(2)
+
+    if row < C.shape[0] and col < C.shape[1]:
+
+        temp = 0
+
+        for k in range(A.shape[1]):
+            temp += A[row][k] * B[k][col]
+
+        C[row][col] = temp
+
+# Matrix Size
+N = 4
+
+# Input Matrices
+A = np.array([
+    [1, 2, 3, 4],
+    [5, 6, 7, 8],
+    [9, 1, 2, 3],
+    [4, 5, 6, 7]
+], dtype=np.float32)
+
+B = np.array([
+    [1, 0, 2, 1],
+    [0, 1, 2, 0],
+    [1, 0, 1, 2],
+    [2, 1, 0, 1]
+], dtype=np.float32)
+
+# Output Matrix
+C = np.zeros((N, N), dtype=np.float32)
+
+# Threads per block
+threads_per_block = (16, 16)
+
+# Blocks per grid
+blocks_per_grid_x = math.ceil(C.shape[0] / threads_per_block[0])
+blocks_per_grid_y = math.ceil(C.shape[1] / threads_per_block[1])
+
+blocks_per_grid = (blocks_per_grid_x, blocks_per_grid_y)
+
+# Launch Kernel
+matrix_multiply[blocks_per_grid, threads_per_block](A, B, C)
+
+# Wait for GPU
+cuda.synchronize()
+
+# Print Results
+print("Matrix A:")
+print(A)
+
+print("\nMatrix B:")
+print(B)
+
+print("\nMatrix C (Result):")
+print(C)
+
